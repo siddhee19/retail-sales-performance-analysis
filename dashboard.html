@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retail Sales Performance — Superstore Analysis</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#1A1F2B;
+    --navy-2:#232938;
+    --panel:#F7F6F2;
+    --paper:#FFFFFF;
+    --ink:#1A1F2B;
+    --ink-soft:#5B6172;
+    --line:#E4E1D8;
+    --profit:#2E7D5B;
+    --profit-soft:#E3F0EA;
+    --loss:#C44536;
+    --loss-soft:#F8E8E5;
+    --amber:#D9A441;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--panel);
+    color:var(--ink);
+    font-family:'Inter','Helvetica Neue',Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .topbar{
+    background:var(--navy);
+    color:#fff;
+    padding:28px 40px 24px;
+  }
+  .topbar-inner{max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;}
+  .eyebrow{
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    font-size:11px;
+    color:#9AA3B5;
+    font-weight:600;
+    margin:0 0 8px;
+  }
+  h1{
+    margin:0;
+    font-size:28px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+    font-family:'Georgia','Times New Roman',serif;
+  }
+  .subtitle{color:#B7BECC;font-size:13.5px;margin-top:6px;}
+  .meta{text-align:right;color:#9AA3B5;font-size:12px;line-height:1.6;}
+  .meta b{color:#fff;}
+
+  .wrap{max-width:1280px;margin:0 auto;padding:28px 40px 60px;}
+
+  .kpi-row{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    margin-bottom:24px;
+  }
+  .kpi{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:18px 20px;
+    position:relative;
+  }
+  .kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-soft);font-weight:600;}
+  .kpi-value{font-size:26px;font-weight:700;margin-top:8px;font-family:'Georgia',serif;}
+  .kpi-sub{font-size:12px;color:var(--ink-soft);margin-top:4px;}
+
+  .finding{
+    background:var(--navy);
+    color:#fff;
+    border-radius:4px;
+    padding:22px 26px;
+    margin-bottom:24px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+  }
+  .finding-tag{
+    background:var(--amber);
+    color:var(--navy);
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    padding:5px 10px;
+    border-radius:3px;
+    white-space:nowrap;
+  }
+  .finding-text{font-size:14.5px;line-height:1.5;color:#E7E9EE;}
+  .finding-text b{color:#fff;}
+
+  .grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:20px 22px;
+  }
+  .card-title{font-size:14px;font-weight:700;margin:0 0 2px;}
+  .card-desc{font-size:12px;color:var(--ink-soft);margin:0 0 14px;}
+  .chart-box{position:relative;height:260px;}
+  .chart-box.tall{height:320px;}
+  .chart-box.short{height:200px;}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{
+    text-align:left;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--ink-soft);
+    font-weight:600;
+    padding:6px 8px;
+    border-bottom:1px solid var(--line);
+  }
+  td{padding:7px 8px;border-bottom:1px solid #EFEDE6;}
+  tr:last-child td{border-bottom:none;}
+  .num{text-align:right;font-variant-numeric:tabular-nums;}
+  .pos{color:var(--profit);font-weight:600;}
+  .neg{color:var(--loss);font-weight:600;}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:10px;}
+  .pill.profit{background:var(--profit-soft);color:var(--profit);}
+  .pill.loss{background:var(--loss-soft);color:var(--loss);}
+
+  footer{
+    max-width:1280px;margin:0 auto;padding:0 40px 50px;
+    color:var(--ink-soft);font-size:11.5px;line-height:1.6;
+  }
+  footer a{color:var(--ink-soft);}
+
+  @media (max-width:900px){
+    .kpi-row{grid-template-columns:1fr 1fr;}
+    .grid, .grid-2, .grid-3{grid-template-columns:1fr;}
+    .topbar-inner{flex-direction:column;align-items:flex-start;}
+    .meta{text-align:left;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div>
+      <p class="eyebrow">Retail Operations · Analytics Brief</p>
+      <h1>Sales Performance Review</h1>
+      <p class="subtitle">9,994 orders · 4 regions · 2014–2017</p>
+    </div>
+    <div class="meta">
+      Prepared from internal order data<br>
+      <b>Tools:</b> SQL · Python · Chart.js
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-label">Total Sales</div>
+      <div class="kpi-value">$2.30M</div>
+      <div class="kpi-sub">5,009 orders</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Total Profit</div>
+      <div class="kpi-value">$286.4K</div>
+      <div class="kpi-sub">12.5% overall margin</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Unprofitable Orders</div>
+      <div class="kpi-value">1,871</div>
+      <div class="kpi-sub">18.7% of all orders lose money</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">States Losing Money</div>
+      <div class="kpi-value">10 <span style="font-size:14px;color:var(--ink-soft);">of 49</span></div>
+      <div class="kpi-sub">Led by Texas, Ohio, Pennsylvania</div>
+    </div>
+  </div>
+
+  <div class="finding">
+    <span class="finding-tag">Key Finding</span>
+    <span class="finding-text">Discounting — not weak sales — is the company's core profitability problem. Orders with <b>no discount run a 29.5% margin</b>; orders discounted <b>31%+ lose 48 cents per dollar of sales</b>. Furniture &mdash; Tables is the single worst sub-category, down $17.7K despite $207K in sales.</span>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <p class="card-title">Discount Band vs. Profit Margin</p>
+      <p class="card-desc">The tipping point: profitability flips negative past 20% discount</p>
+      <div class="chart-box tall"><canvas id="discountChart"></canvas></div>
+    </div>
+    <div class="card">
+      <p class="card-title">Monthly Sales Trend</p>
+      <p class="card-desc">Consistent Sep–Nov seasonal lift, steady YoY growth</p>
+      <div class="chart-box tall"><canvas id="trendChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <p class="card-title">Profit by Region</p>
+      <p class="card-desc">West leads on margin (14.9%); Central trails (7.9%)</p>
+      <div class="chart-box"><canvas id="regionChart"></canvas></div>
+    </div>
+    <div class="card">
+      <p class="card-title">Customer Segment Performance</p>
+      <p class="card-desc">Consumer drives the most volume and profit</p>
+      <div class="chart-box"><canvas id="segmentChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <p class="card-title">Sub-Category Profit (Lowest to Highest)</p>
+    <p class="card-desc">Tables and Bookcases are structurally unprofitable; Copiers and Phones lead</p>
+    <div class="chart-box" style="height:340px;"><canvas id="subcatChart"></canvas></div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <p class="card-title">Worst-Performing States</p>
+      <p class="card-desc">By total profit</p>
+      <table>
+        <thead><tr><th>State</th><th>Region</th><th class="num">Profit</th></tr></thead>
+        <tbody id="stateTable"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <p class="card-title">Top 5 Products</p>
+      <p class="card-desc">By total profit contribution</p>
+      <table>
+        <thead><tr><th>Product</th><th class="num">Profit</th></tr></thead>
+        <tbody id="topProductTable"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <p class="card-title">Bottom 5 Products</p>
+      <p class="card-desc">Biggest money losers</p>
+      <table>
+        <thead><tr><th>Product</th><th class="num">Profit</th></tr></thead>
+        <tbody id="bottomProductTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Data: Sample Superstore dataset (9,994 line items, 2014–2017). Dates were cleaned to resolve mixed string/datetime formats;
+  1,708 rows with internally inconsistent ship dates are flagged and excluded from shipping-time calculations.
+  Full SQL queries and Python cleaning steps available in the accompanying project repo.
+</footer>
+
+<script>
+const DATA = {"kpi": {"total_orders": 5009, "total_sales": 2297201.0, "total_profit": 286397.0, "margin_pct": 12.47}, "region": [{"Region": "West", "sales": 725458.0, "profit": 108418.0, "margin": 14.94}, {"Region": "East", "sales": 678781.0, "profit": 91523.0, "margin": 13.48}, {"Region": "South", "sales": 391722.0, "profit": 46749.0, "margin": 11.93}, {"Region": "Central", "sales": 501240.0, "profit": 39706.0, "margin": 7.92}], "subcat": [{"name": "Tables", "Category": "Furniture", "sales": 206966.0, "profit": -17725.0}, {"name": "Bookcases", "Category": "Furniture", "sales": 114880.0, "profit": -3473.0}, {"name": "Supplies", "Category": "Office Supplies", "sales": 46674.0, "profit": -1189.0}, {"name": "Fasteners", "Category": "Office Supplies", "sales": 3024.0, "profit": 950.0}, {"name": "Machines", "Category": "Technology", "sales": 189239.0, "profit": 3385.0}, {"name": "Labels", "Category": "Office Supplies", "sales": 12486.0, "profit": 5546.0}, {"name": "Art", "Category": "Office Supplies", "sales": 27119.0, "profit": 6528.0}, {"name": "Envelopes", "Category": "Office Supplies", "sales": 16476.0, "profit": 6964.0}, {"name": "Furnishings", "Category": "Furniture", "sales": 91705.0, "profit": 13059.0}, {"name": "Appliances", "Category": "Office Supplies", "sales": 107532.0, "profit": 18138.0}, {"name": "Storage", "Category": "Office Supplies", "sales": 223844.0, "profit": 21279.0}, {"name": "Chairs", "Category": "Furniture", "sales": 328449.0, "profit": 26590.0}, {"name": "Binders", "Category": "Office Supplies", "sales": 203413.0, "profit": 30222.0}, {"name": "Paper", "Category": "Office Supplies", "sales": 78479.0, "profit": 34054.0}, {"name": "Accessories", "Category": "Technology", "sales": 167380.0, "profit": 41937.0}, {"name": "Phones", "Category": "Technology", "sales": 330007.0, "profit": 44516.0}, {"name": "Copiers", "Category": "Technology", "sales": 149528.0, "profit": 55618.0}], "discount": [{"band": "0%", "n": 4798, "profit": 320988.0, "margin": 29.51}, {"band": "1-10%", "n": 94, "profit": 9029.0, "margin": 16.61}, {"band": "11-20%", "n": 3709, "profit": 91756.0, "margin": 11.58}, {"band": "21-30%", "n": 227, "profit": -10369.0, "margin": -10.05}, {"band": "31%+", "n": 1166, "profit": -125007.0, "margin": -48.16}], "monthly": [{"yr": 2014, "mo": 1, "mname": "Jan", "sales": 28954.0, "profit": 4549.0}, {"yr": 2014, "mo": 2, "mname": "Feb", "sales": 12743.0, "profit": 2655.0}, {"yr": 2014, "mo": 3, "mname": "Mar", "sales": 54802.0, "profit": 93.0}, {"yr": 2014, "mo": 4, "mname": "Apr", "sales": 24710.0, "profit": 4601.0}, {"yr": 2014, "mo": 5, "mname": "May", "sales": 29640.0, "profit": 3912.0}, {"yr": 2014, "mo": 6, "mname": "Jun", "sales": 29287.0, "profit": 4500.0}, {"yr": 2014, "mo": 7, "mname": "Jul", "sales": 35341.0, "profit": -1784.0}, {"yr": 2014, "mo": 8, "mname": "Aug", "sales": 37855.0, "profit": 2081.0}, {"yr": 2014, "mo": 9, "mname": "Sep", "sales": 66110.0, "profit": 10232.0}, {"yr": 2014, "mo": 10, "mname": "Oct", "sales": 34562.0, "profit": 4075.0}, {"yr": 2014, "mo": 11, "mname": "Nov", "sales": 64818.0, "profit": 6653.0}, {"yr": 2014, "mo": 12, "mname": "Dec", "sales": 65426.0, "profit": 7976.0}, {"yr": 2015, "mo": 1, "mname": "Jan", "sales": 29347.0, "profit": 1237.0}, {"yr": 2015, "mo": 2, "mname": "Feb", "sales": 20728.0, "profit": 2171.0}, {"yr": 2015, "mo": 3, "mname": "Mar", "sales": 40877.0, "profit": 9166.0}, {"yr": 2015, "mo": 4, "mname": "Apr", "sales": 38057.0, "profit": 6133.0}, {"yr": 2015, "mo": 5, "mname": "May", "sales": 30934.0, "profit": 2779.0}, {"yr": 2015, "mo": 6, "mname": "Jun", "sales": 28862.0, "profit": 4788.0}, {"yr": 2015, "mo": 7, "mname": "Jul", "sales": 28730.0, "profit": 672.0}, {"yr": 2015, "mo": 8, "mname": "Aug", "sales": 50095.0, "profit": 10112.0}, {"yr": 2015, "mo": 9, "mname": "Sep", "sales": 66729.0, "profit": 9929.0}, {"yr": 2015, "mo": 10, "mname": "Oct", "sales": 32025.0, "profit": 3433.0}, {"yr": 2015, "mo": 11, "mname": "Nov", "sales": 50732.0, "profit": 5582.0}, {"yr": 2015, "mo": 12, "mname": "Dec", "sales": 53416.0, "profit": 5615.0}, {"yr": 2016, "mo": 1, "mname": "Jan", "sales": 38048.0, "profit": 8501.0}, {"yr": 2016, "mo": 2, "mname": "Feb", "sales": 49238.0, "profit": 14684.0}, {"yr": 2016, "mo": 3, "mname": "Mar", "sales": 49612.0, "profit": 1950.0}, {"yr": 2016, "mo": 4, "mname": "Apr", "sales": 45192.0, "profit": 7423.0}, {"yr": 2016, "mo": 5, "mname": "May", "sales": 64964.0, "profit": 9975.0}, {"yr": 2016, "mo": 6, "mname": "Jun", "sales": 38992.0, "profit": 4480.0}, {"yr": 2016, "mo": 7, "mname": "Jul", "sales": 42773.0, "profit": 6122.0}, {"yr": 2016, "mo": 8, "mname": "Aug", "sales": 46340.0, "profit": 859.0}, {"yr": 2016, "mo": 9, "mname": "Sep", "sales": 41985.0, "profit": 5172.0}, {"yr": 2016, "mo": 10, "mname": "Oct", "sales": 52268.0, "profit": 8256.0}, {"yr": 2016, "mo": 11, "mname": "Nov", "sales": 66838.0, "profit": 3058.0}, {"yr": 2016, "mo": 12, "mname": "Dec", "sales": 72954.0, "profit": 11313.0}, {"yr": 2017, "mo": 1, "mname": "Jan", "sales": 64734.0, "profit": 10879.0}, {"yr": 2017, "mo": 2, "mname": "Feb", "sales": 50011.0, "profit": 4244.0}, {"yr": 2017, "mo": 3, "mname": "Mar", "sales": 74774.0, "profit": 18128.0}, {"yr": 2017, "mo": 4, "mname": "Apr", "sales": 39072.0, "profit": -5890.0}, {"yr": 2017, "mo": 5, "mname": "May", "sales": 40882.0, "profit": 7567.0}, {"yr": 2017, "mo": 6, "mname": "Jun", "sales": 47742.0, "profit": 7396.0}, {"yr": 2017, "mo": 7, "mname": "Jul", "sales": 54382.0, "profit": 4998.0}, {"yr": 2017, "mo": 8, "mname": "Aug", "sales": 75675.0, "profit": 11767.0}, {"yr": 2017, "mo": 9, "mname": "Sep", "sales": 74165.0, "profit": 9221.0}, {"yr": 2017, "mo": 10, "mname": "Oct", "sales": 65501.0, "profit": 6572.0}, {"yr": 2017, "mo": 11, "mname": "Nov", "sales": 89306.0, "profit": 11142.0}, {"yr": 2017, "mo": 12, "mname": "Dec", "sales": 56969.0, "profit": 7414.0}], "segment": [{"Segment": "Consumer", "customers": 409, "sales": 1161401.0, "profit": 134119.0}, {"Segment": "Corporate", "customers": 236, "sales": 706146.0, "profit": 91979.0}, {"Segment": "Home Office", "customers": 148, "sales": 429653.0, "profit": 60299.0}], "state": [{"State": "Texas", "Region": "Central", "sales": 170188.0, "profit": -25729.0}, {"State": "Ohio", "Region": "East", "sales": 78258.0, "profit": -16971.0}, {"State": "Pennsylvania", "Region": "East", "sales": 116512.0, "profit": -15560.0}, {"State": "Illinois", "Region": "Central", "sales": 80166.0, "profit": -12608.0}, {"State": "North Carolina", "Region": "South", "sales": 55603.0, "profit": -7491.0}, {"State": "Colorado", "Region": "West", "sales": 32108.0, "profit": -6528.0}, {"State": "Tennessee", "Region": "South", "sales": 30662.0, "profit": -5342.0}, {"State": "Arizona", "Region": "West", "sales": 35282.0, "profit": -3428.0}, {"State": "Florida", "Region": "South", "sales": 89474.0, "profit": -3399.0}, {"State": "Oregon", "Region": "West", "sales": 17431.0, "profit": -1190.0}], "top_products": [{"name": "Canon imageCLASS 2200 Advanced Copier", "profit": 25200.0}, {"name": "Fellowes PB500 Electric Punch Plastic Comb Binding Machine with Manual Bind", "profit": 7753.0}, {"name": "Hewlett Packard LaserJet 3310 Copier", "profit": 6984.0}, {"name": "Canon PC1060 Personal Laser Copier", "profit": 4571.0}, {"name": "HP Designjet T520 Inkjet Large Format Printer - 24\" Color", "profit": 4095.0}], "bottom_products": [{"name": "Cubify CubeX 3D Printer Double Head Print", "profit": -8880.0}, {"name": "Lexmark MX611dhe Monochrome Laser Printer", "profit": -4590.0}, {"name": "Cubify CubeX 3D Printer Triple Head Print", "profit": -3840.0}, {"name": "Chromcraft Bull-Nose Wood Oval Conference Tables & Bases", "profit": -2876.0}, {"name": "Bush Advantage Collection Racetrack Conference Table", "profit": -1934.0}]};
+
+const PROFIT = '#2E7D5B', LOSS = '#C44536', AMBER = '#D9A441', NAVY = '#1A1F2B', INK_SOFT='#5B6172', LINE='#E4E1D8';
+Chart.defaults.font.family = "'Inter','Helvetica Neue',Arial,sans-serif";
+Chart.defaults.color = INK_SOFT;
+Chart.defaults.font.size = 11;
+
+function fmtMoney(v){
+  const sign = v < 0 ? '-' : '';
+  const abs = Math.abs(v);
+  if(abs >= 1000) return sign + '$' + (abs/1000).toFixed(abs>=10000?0:1) + 'K';
+  return sign + '$' + abs.toFixed(0);
+}
+
+// Discount chart
+new Chart(document.getElementById('discountChart'), {
+  type: 'bar',
+  data: {
+    labels: DATA.discount.map(d=>d.band),
+    datasets: [{
+      label: 'Profit',
+      data: DATA.discount.map(d=>d.profit),
+      backgroundColor: DATA.discount.map(d=>d.profit>=0?PROFIT:LOSS),
+      borderRadius: 3,
+      maxBarThickness: 56
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false},
+      tooltip:{callbacks:{label:(ctx)=>{
+        const d = DATA.discount[ctx.dataIndex];
+        return [`Profit: ${fmtMoney(d.profit)}`, `Margin: ${d.margin}%`, `Orders: ${d.n}`];
+      }}}
+    },
+    scales:{
+      y:{grid:{color:LINE},ticks:{callback:v=>fmtMoney(v)}},
+      x:{grid:{display:false}}
+    }
+  }
+});
+
+// Monthly trend chart
+new Chart(document.getElementById('trendChart'), {
+  type: 'line',
+  data: {
+    labels: DATA.monthly.map(d=>d.mname+" '"+String(d.yr).slice(2)),
+    datasets: [
+      { label:'Sales', data: DATA.monthly.map(d=>d.sales), borderColor: NAVY, backgroundColor:'rgba(26,31,43,0.06)', fill:true, tension:0.3, pointRadius:0, borderWidth:2 },
+      { label:'Profit', data: DATA.monthly.map(d=>d.profit), borderColor: AMBER, backgroundColor:'transparent', tension:0.3, pointRadius:0, borderWidth:2 }
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{position:'top', align:'end', labels:{boxWidth:10,boxHeight:10,usePointStyle:true}} },
+    scales:{
+      y:{grid:{color:LINE},ticks:{callback:v=>fmtMoney(v)}},
+      x:{grid:{display:false}, ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:12}}
+    }
+  }
+});
+
+// Region chart
+new Chart(document.getElementById('regionChart'), {
+  type:'bar',
+  data:{
+    labels: DATA.region.map(d=>d.Region),
+    datasets:[{
+      label:'Profit Margin %',
+      data: DATA.region.map(d=>d.margin),
+      backgroundColor: DATA.region.map((d,i)=> i===0?PROFIT : i===DATA.region.length-1? LOSS : '#7A8AA0'),
+      borderRadius:3, maxBarThickness:48
+    }]
+  },
+  options:{
+    indexAxis:'y',
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:(ctx)=>{
+      const d = DATA.region[ctx.dataIndex];
+      return [`Margin: ${d.margin}%`, `Profit: ${fmtMoney(d.profit)}`, `Sales: ${fmtMoney(d.sales)}`];
+    }}}},
+    scales:{ x:{grid:{color:LINE},ticks:{callback:v=>v+'%'}}, y:{grid:{display:false}} }
+  }
+});
+
+// Segment chart (donut)
+new Chart(document.getElementById('segmentChart'), {
+  type:'doughnut',
+  data:{
+    labels: DATA.segment.map(d=>d.Segment),
+    datasets:[{
+      data: DATA.segment.map(d=>d.profit),
+      backgroundColor:[NAVY, '#4A5A78', AMBER],
+      borderWidth:2, borderColor:'#fff'
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    cutout:'62%',
+    plugins:{
+      legend:{position:'bottom', labels:{boxWidth:10,boxHeight:10,usePointStyle:true,padding:14}},
+      tooltip:{callbacks:{label:(ctx)=>{
+        const d = DATA.segment[ctx.dataIndex];
+        return ` ${d.Segment}: ${fmtMoney(d.profit)} profit (${d.customers} customers)`;
+      }}}
+    }
+  }
+});
+
+// Subcategory horizontal bar
+new Chart(document.getElementById('subcatChart'), {
+  type:'bar',
+  data:{
+    labels: DATA.subcat.map(d=>d.name),
+    datasets:[{
+      data: DATA.subcat.map(d=>d.profit),
+      backgroundColor: DATA.subcat.map(d=>d.profit>=0?PROFIT:LOSS),
+      borderRadius:3, maxBarThickness:18
+    }]
+  },
+  options:{
+    indexAxis:'y',
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:(ctx)=>{
+      const d = DATA.subcat[ctx.dataIndex];
+      return [`${d.Category}`, `Profit: ${fmtMoney(d.profit)}`, `Sales: ${fmtMoney(d.sales)}`];
+    }}}},
+    scales:{ x:{grid:{color:LINE},ticks:{callback:v=>fmtMoney(v)}}, y:{grid:{display:false}} }
+  }
+});
+
+// Tables
+function row(cells){ return '<tr>' + cells.join('') + '</tr>'; }
+
+document.getElementById('stateTable').innerHTML = DATA.state.map(d=>row([
+  `<td>${d.State}</td>`,
+  `<td>${d.Region}</td>`,
+  `<td class="num neg">${fmtMoney(d.profit)}</td>`
+])).join('');
+
+document.getElementById('topProductTable').innerHTML = DATA.top_products.map(d=>row([
+  `<td>${d.name.length>34? d.name.slice(0,34)+'…' : d.name}</td>`,
+  `<td class="num pos">${fmtMoney(d.profit)}</td>`
+])).join('');
+
+document.getElementById('bottomProductTable').innerHTML = DATA.bottom_products.map(d=>row([
+  `<td>${d.name.length>34? d.name.slice(0,34)+'…' : d.name}</td>`,
+  `<td class="num neg">${fmtMoney(d.profit)}</td>`
+])).join('');
+</script>
+
+</body>
+</html>
